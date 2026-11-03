@@ -1,0 +1,23 @@
+{
+  "name": "omnichain-portfolio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Native balances across 12 blockchains from public endpoints, with each chain's address format checked first",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "node --test test/*.test.ts",
+    "crosscheck": "node scripts/crosscheck.ts"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "^7.0.2"
+  }
+}
