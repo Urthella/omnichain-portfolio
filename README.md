@@ -63,9 +63,25 @@ node src/cli.ts --usd --json solana:So11111111111111111111111111111111111111112
 node src/cli.ts --endpoint ethereum=http://localhost:8545 ethereum:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
 ```
 
-Arguments are `CHAIN:ADDRESS`. `--json` prints exact amounts, `--usd` adds prices from CoinGecko,
-and `--endpoint` points a chain at your own node. It exits with 1 if any wallet failed, after
-printing the others.
+Arguments are `CHAIN:ADDRESS`, or just an address, which is looked up on every chain whose format
+it fits. Some formats are shared: an EVM address is checked on Ethereum, Base, Arbitrum and
+Hyperliquid, and `0x` with 64 hex digits on Sui, Aptos and Starknet.
+
+```
+$ node src/cli.ts 0xdfc24b077bc1425ad1dea75bcb6f8158e10df303 wrap.near
+chain        address                   amount
+ethereum     0xdfc24b…0df303         0.000151  ETH
+base         0xdfc24b…0df303                0  ETH
+arbitrum     0xdfc24b…0df303         0.000151  ETH
+hyperliquid  0xdfc24b…0df303  10835320.777819  USDC (perps)
+near         wrap.near        34929847.147615  NEAR
+```
+
+Short forms like `0x1`, NEAR names without a dot and NEAR's EVM-style accounts are too ambiguous to
+guess, so those need a chain.
+
+`--json` prints exact amounts, `--usd` adds prices from CoinGecko, and `--endpoint` points a chain
+at your own node. It exits with 1 if any wallet failed, after printing the others.
 
 From code:
 
@@ -108,10 +124,11 @@ mempool.space's own validator agrees with every one. The EVM vectors come from E
 
 ## How it's tested
 
-29 tests run against a fake `fetch`, with no network. They cover each chain's request and parsing,
-the address checks, exact amounts, timeouts, retries and how wallets are queried.
+34 tests run against a fake `fetch`, with no network. They cover each chain's request and parsing,
+the address checks, which chains a bare address goes to, exact amounts, timeouts, retries and how
+wallets are queried.
 
-To check that the tests can fail, 24 bugs were planted one at a time, and every one was caught:
+To check that the tests can fail, 28 bugs were planted one at a time, and every one was caught:
 among them, skipping the EIP-55 checksum, accepting taproot addresses with the older checksum,
 dropping Starknet's high 128 bits, parsing lamports as a float and keeping only the last Cosmos
 delegation. One more planted bug was never caught, because the check it removed didn't decide
