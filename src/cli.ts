@@ -1,46 +1,30 @@
 #!/usr/bin/env node
-import { type ChainName, chains, isChainName } from "./chains.ts";
-import { type Wallet, portfolio, usdPrices } from "./portfolio.ts";
+import { type Args, parseArgs } from "./args.ts";
+import { chains } from "./chains.ts";
+import { portfolio, usdPrices } from "./portfolio.ts";
 
-const USAGE = `usage: node src/cli.ts [--usd] [--json] [--endpoint CHAIN=URL]... CHAIN:ADDRESS...
+const USAGE = `usage: node src/cli.ts [--usd] [--json] [--endpoint CHAIN=URL]... [CHAIN:]ADDRESS...
 
   --usd                  add USD values from CoinGecko
   --json                 print JSON, with exact amounts
   --endpoint CHAIN=URL   use your own endpoint for a chain
 
+An address without a chain is looked up on every chain whose address format it fits.
+
 chains: ${Object.keys(chains).join(", ")}`;
 
-function fail(message: string): never {
-  console.error(`${message}\n\n${USAGE}`);
+let args: Args;
+try {
+  args = parseArgs(process.argv.slice(2));
+} catch (e) {
+  console.error(`${e instanceof Error ? e.message : e}\n\n${USAGE}`);
   process.exit(2);
 }
-
-const wallets: Wallet[] = [];
-const endpoints: Partial<Record<ChainName, string>> = {};
-let usd = false;
-let json = false;
-const args = process.argv.slice(2);
-for (let i = 0; i < args.length; i++) {
-  const arg = args[i];
-  if (arg === "-h" || arg === "--help") {
-    console.log(USAGE);
-    process.exit(0);
-  } else if (arg === "--usd") {
-    usd = true;
-  } else if (arg === "--json") {
-    json = true;
-  } else if (arg === "--endpoint") {
-    const [chain, url] = (args[++i] ?? "").split(/=(.*)/s);
-    if (!isChainName(chain) || !url) fail(`--endpoint needs CHAIN=URL`);
-    endpoints[chain] = url;
-  } else {
-    // Split at the first colon only: raw TON addresses contain one.
-    const [chain, address] = arg.split(/:(.*)/s);
-    if (!isChainName(chain) || !address) fail(`not CHAIN:ADDRESS: ${arg}`);
-    wallets.push({ chain, address });
-  }
+if (args.help) {
+  console.log(USAGE);
+  process.exit(0);
 }
-if (wallets.length === 0) fail("no wallets given");
+const { wallets, endpoints, usd, json } = args;
 
 const results = await portfolio(wallets, { endpoints });
 let prices = new Map<string, number>();
